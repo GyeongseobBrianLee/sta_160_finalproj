@@ -1,0 +1,35 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+data = pd.read_csv('~/Desktop/UCD/Fall_2024/sta_160/final_proj/life_expectancy.csv')
+data.head()
+
+data.info()
+data.isnull().sum()
+
+"""
+Data Columns summaries
+1. Country - 174 countries
+2. Country Code - 3 letter code
+3. Region - region of the world country is located in
+4. IncomeGroup - country's income class
+5. Year - 2000 ~ 2019 (both included)
+6. Life Expectancy World Bank - data
+7. Prevalence of Undernourishment - % of the population whose habitual food consumption is insufficient 
+                                    to provide the dietary energy levels that are required to maintain
+                                    a normally active and healthy life
+8. CO2 - CO2 emissions
+9. Health Expenditure % - level of current health expenditure expressed as a % of GDP
+10. Education Expenditure % - General government expenditure on education expressed as a % of GDP
+11. Unemployment - % share of the labor force that's without work
+12. Corruption - transparency, accountability, and corruption in the public sector assets
+13. Sanitation - the % of people using improved sanitation facilities that are not
+                shared with other households
+14. Injuries - adjusted life years due to injuries
+15. Communicable - adjusted life years due to communicable diseases
+16. NonCommunicable - adjusted life years due to non communicable diseases 
+"""
+
+data['Life Expectancy World Bank'][:10]
