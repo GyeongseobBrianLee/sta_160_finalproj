@@ -1,0 +1,182 @@
+---
+title: "STA 160 EDA"
+author: "Aaron Luong"
+date: "2024-10-23"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+life.expectancy <- read.csv("~/Downloads/life expectancy.csv")
+```
+
+```{r}
+# Create named variables for each column's NA count
+na_Country_Name <- sum(is.na(life.expectancy$Country.Name))
+na_Country_Code <- sum(is.na(life.expectancy$Country.Code))
+na_Region <- sum(is.na(life.expectancy$Region))
+na_IncomeGroup <- sum(is.na(life.expectancy$IncomeGroup))
+na_Year <- sum(is.na(life.expectancy$Year))
+na_Life_Expectancy_WB <- sum(is.na(life.expectancy$Life.Expectancy.World.Bank))
+na_Prevalence_of_Undernourishment <- sum(is.na(life.expectancy$Prevelance.of.Undernourishment))
+na_CO2 <- sum(is.na(life.expectancy$CO2))
+na_Health_Expenditure <- sum(is.na(life.expectancy$Health.Expenditure..))
+na_Education_Expenditure <- sum(is.na(life.expectancy$Education.Expenditure..))
+na_Unemployment <- sum(is.na(life.expectancy$Unemployment))
+na_Corruption <- sum(is.na(life.expectancy$Corruption))
+na_Sanitation <- sum(is.na(life.expectancy$Sanitation))
+na_Injuries <- sum(is.na(life.expectancy$Injuries))
+na_Communicable <- sum(is.na(life.expectancy$Communicable))
+na_NonCommunicable <- sum(is.na(life.expectancy$NonCommunicable))
+
+# Display the variable names and NA counts
+cat("Country.Name NA count:", na_Country_Name, "\n")
+cat("Country.Code NA count:", na_Country_Code, "\n")
+cat("Region NA count:", na_Region, "\n")
+cat("IncomeGroup NA count:", na_IncomeGroup, "\n")
+cat("Year NA count:", na_Year, "\n")
+cat("Life.Expectancy.World.Bank NA count:", na_Life_Expectancy_WB, "\n")
+cat("Prevalence.of.Undernourishment NA count:", na_Prevalence_of_Undernourishment, "\n")
+cat("CO2 NA count:", na_CO2, "\n")
+cat("Health.Expenditure NA count:", na_Health_Expenditure, "\n")
+cat("Education.Expenditure NA count:", na_Education_Expenditure, "\n")
+cat("Unemployment NA count:", na_Unemployment, "\n")
+cat("Corruption NA count:", na_Corruption, "\n")
+cat("Sanitation NA count:", na_Sanitation, "\n")
+cat("Injuries NA count:", na_Injuries, "\n")
+cat("Communicable NA count:", na_Communicable, "\n")
+cat("NonCommunicable NA count:", na_NonCommunicable, "\n")
+```
+
+```{r}
+LE_na_rows <- life.expectancy[is.na(life.expectancy$Life.Expectancy.World.Bank), ]
+
+# Display the filtered rows
+LE_na_rows
+```
+
+```{r}
+# List of countries to remove
+countries_to_remove <- c("Andorra", "American Samoa", "Dominica", "Monaco", 
+                         "Marshall Islands", "Northern Mariana Islands", 
+                         "Nauru", "Palau", "San Marino", "Tuvalu")
+
+# Filter out the specified countries
+life.expectancy_filtered <- life.expectancy[!life.expectancy$Country.Name %in% countries_to_remove, ]
+
+# Display the filtered dataset
+life.expectancy_filtered
+```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(reshape2)
+
+# Subset the dataset to include only numeric variables
+numeric_vars <- life.expectancy[, sapply(life.expectancy, is.numeric)]
+
+# Calculate the correlation matrix
+cor_matrix <- cor(numeric_vars, use = "complete.obs")
+
+# Melt the correlation matrix for plotting
+melted_cor_matrix <- melt(cor_matrix)
+
+# Plot the heatmap
+ggplot(data = melted_cor_matrix, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", midpoint = 0, limit = c(-1, 1), space = "Lab", name = "Correlation") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  labs(title = "Correlation Heatmap", x = "Variables", y = "Variables")
+```
+
+```{r}
+# Load necessary libraries
+library(reshape2)
+
+# Subset the dataset to include only numeric variables
+numeric_vars <- life.expectancy[, sapply(life.expectancy, is.numeric)]
+
+# Calculate the correlation matrix
+cor_matrix <- cor(numeric_vars, use = "complete.obs")
+
+# Melt the correlation matrix for easy viewing
+melted_cor_matrix <- melt(cor_matrix)
+
+# Remove self-correlations (correlation of a variable with itself)
+melted_cor_matrix <- melted_cor_matrix[melted_cor_matrix$Var1 != melted_cor_matrix$Var2, ]
+
+# Sort by absolute value of the correlation (highest to lowest)
+melted_cor_matrix <- melted_cor_matrix[order(-abs(melted_cor_matrix$value)), ]
+
+# Display the most correlated variable pairs (top 10, for example)
+top_correlations <- head(melted_cor_matrix, 10)
+
+# Display the top correlations
+top_correlations
+```
+```{r}
+# Subset the dataset to include only numeric variables
+numeric_vars <- life.expectancy[, sapply(life.expectancy, is.numeric)]
+
+# Calculate the correlation matrix
+cor_matrix <- cor(numeric_vars, use = "complete.obs")
+
+# Extract correlations with Life.Expectancy.World.Bank
+life_expectancy_correlations <- cor_matrix["Life.Expectancy.World.Bank", ]
+
+# Remove the correlation of Life.Expectancy.World.Bank with itself
+life_expectancy_correlations <- life_expectancy_correlations[names(life_expectancy_correlations) != "Life.Expectancy.World.Bank"]
+
+# Sort by absolute correlation (most correlated variables)
+sorted_life_expectancy_correlations <- sort(abs(life_expectancy_correlations), decreasing = TRUE)
+
+# Display the most correlated variables (top 10)
+top_life_expectancy_correlations <- head(sorted_life_expectancy_correlations, 10)
+
+# Display the result
+top_life_expectancy_correlations
+```
+```{r}
+ggplot(life.expectancy_filtered, aes(x = Life.Expectancy.World.Bank)) +
+  geom_histogram(bins = 30, fill = "blue", color = "black") +
+  theme_minimal() +
+  labs(title = "Distribution of Life Expectancy", x = "Life Expectancy", y = "Frequency")
+```
+```{r}
+ggplot(life.expectancy_filtered, aes(x = Year, y = Life.Expectancy.World.Bank, group = Country.Name, color = Region)) +
+  geom_line(alpha = 0.3) +
+  theme_minimal() +
+  labs(title = "Life Expectancy Trends Over Time", x = "Year", y = "Life Expectancy")
+```
+
+
+```{r}
+ggplot(life.expectancy_filtered, aes(x = Health.Expenditure.., y = Life.Expectancy.World.Bank, color = Region)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  theme_minimal() +
+  labs(title = "Life Expectancy vs. Health Expenditure", x = "Health Expenditure", y = "Life Expectancy")
+```
+```{r}
+ggplot(life.expectancy_filtered, aes(x = Region, y = Life.Expectancy.World.Bank, fill = IncomeGroup)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "Life Expectancy by Region and Income Group", x = "Region", y = "Life Expectancy")
+```
+```{r}
+library(GGally)
+numeric_vars <- life.expectancy_filtered[, sapply(life.expectancy_filtered, is.numeric)]
+ggpairs(numeric_vars)
+```
+
+```{r}
+ggplot(life.expectancy_filtered, aes(x = Region, y = Health.Expenditure.., fill = Region)) +
+  geom_violin(trim = FALSE) +
+  theme_minimal() +
+  labs(title = "Distribution of Health Expenditure by Region", x = "Region", y = "Health Expenditure")
+```
