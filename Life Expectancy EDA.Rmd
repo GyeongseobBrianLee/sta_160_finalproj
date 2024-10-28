@@ -166,6 +166,7 @@ ggplot(life.expectancy_filtered, aes(x = Health.Expenditure.., y = Life.Expectan
 ggplot(life.expectancy_filtered, aes(x = Region, y = Life.Expectancy.World.Bank, fill = IncomeGroup)) +
   geom_boxplot() +
   theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
   labs(title = "Life Expectancy by Region and Income Group", x = "Region", y = "Life Expectancy")
 ```
 ```{r}
@@ -178,5 +179,6 @@ ggpairs(numeric_vars)
 ggplot(life.expectancy_filtered, aes(x = Region, y = Health.Expenditure.., fill = Region)) +
   geom_violin(trim = FALSE) +
   theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
   labs(title = "Distribution of Health Expenditure by Region", x = "Region", y = "Health Expenditure")
 ```
