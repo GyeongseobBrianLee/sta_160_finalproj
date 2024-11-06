@@ -1,0 +1,304 @@
+---
+title: "Ravi Part Of Code"
+author: "Ravinit Chand"
+date: "2024-11-06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+life.expectancy <- read.csv(file.choose())
+```
+
+```{r}
+# Create named variables for each column's NA count
+#This keeps track of how many NA values are in each column 
+na_Country_Name <- sum(is.na(life.expectancy$Country.Name))
+na_Country_Code <- sum(is.na(life.expectancy$Country.Code))
+na_Region <- sum(is.na(life.expectancy$Region))
+na_IncomeGroup <- sum(is.na(life.expectancy$IncomeGroup))
+na_Year <- sum(is.na(life.expectancy$Year))
+na_Life_Expectancy_WB <- sum(is.na(life.expectancy$Life.Expectancy.World.Bank))
+na_Prevalence_of_Undernourishment <- sum(is.na(life.expectancy$Prevelance.of.Undernourishment))
+na_CO2 <- sum(is.na(life.expectancy$CO2))
+na_Health_Expenditure <- sum(is.na(life.expectancy$Health.Expenditure..))
+na_Education_Expenditure <- sum(is.na(life.expectancy$Education.Expenditure..))
+na_Unemployment <- sum(is.na(life.expectancy$Unemployment))
+na_Corruption <- sum(is.na(life.expectancy$Corruption))
+na_Sanitation <- sum(is.na(life.expectancy$Sanitation))
+na_Injuries <- sum(is.na(life.expectancy$Injuries))
+na_Communicable <- sum(is.na(life.expectancy$Communicable))
+na_NonCommunicable <- sum(is.na(life.expectancy$NonCommunicable))
+
+# Display the variable names and NA counts
+cat("Country.Name NA count:", na_Country_Name, "\n")
+cat("Country.Code NA count:", na_Country_Code, "\n")
+cat("Region NA count:", na_Region, "\n")
+cat("IncomeGroup NA count:", na_IncomeGroup, "\n")
+cat("Year NA count:", na_Year, "\n")
+cat("Life.Expectancy.World.Bank NA count:", na_Life_Expectancy_WB, "\n")
+cat("Prevalence.of.Undernourishment NA count:", na_Prevalence_of_Undernourishment, "\n")
+cat("CO2 NA count:", na_CO2, "\n")
+cat("Health.Expenditure NA count:", na_Health_Expenditure, "\n")
+cat("Education.Expenditure NA count:", na_Education_Expenditure, "\n")
+cat("Unemployment NA count:", na_Unemployment, "\n")
+cat("Corruption NA count:", na_Corruption, "\n")
+cat("Sanitation NA count:", na_Sanitation, "\n")
+cat("Injuries NA count:", na_Injuries, "\n")
+cat("Communicable NA count:", na_Communicable, "\n")
+cat("NonCommunicable NA count:", na_NonCommunicable, "\n")
+```
+
+```{r}
+LE_na_rows <- life.expectancy[is.na(life.expectancy$Life.Expectancy.World.Bank), ]
+
+# Display the filtered rows
+LE_na_rows
+```
+
+```{r}
+# List of countries to remove
+countries_to_remove <- c("Andorra", "American Samoa", "Dominica", "Monaco", 
+                         "Marshall Islands", "Northern Mariana Islands", 
+                         "Nauru", "Palau", "San Marino", "Tuvalu")
+
+# Filter out the specified countries
+life.expectancy_filtered <- life.expectancy[!life.expectancy$Country.Name %in% countries_to_remove, ]
+
+# Display the filtered dataset
+life.expectancy_filtered
+```
+
+
+Ravi PCA+K-Mean's Part Now 
+```{r}
+#1. Prepare Your Data
+
+#1.1 Load Library
+library(dplyr)
+
+#1.2 Replace NA With Means
+#Removed corruption and education expenditure since they are not statistically significant and have > 15% NA Values
+# Define the list of variables to impute
+variables_to_impute <- c("Prevelance.of.Undernourishment", "CO2", "Health.Expenditure..", "Unemployment",
+                         "Sanitation", "Injuries", "Communicable", "NonCommunicable")
+
+# Loop through each variable and impute missing values with the mean
+for (var in variables_to_impute) {
+  # Impute the missing values for each variable using the mean
+  life.expectancy_filtered[[var]][is.na(life.expectancy_filtered[[var]])] <- 
+    mean(life.expectancy_filtered[[var]], na.rm = TRUE)
+}
+any_na_remaining <- sapply(variables_to_impute, function(var) any(is.na(life.expectancy_filtered[[var]])))
+print(any_na_remaining)
+#false for that, showing no na values for anything left 
+```
+```{r}
+#2 Standardize The Data (so they're weighted the same)
+
+#2.1 Select the columns you want to standardize
+columns_to_standardize <- c("Prevelance.of.Undernourishment", "CO2", 
+                            "Health.Expenditure..",  
+                            "Unemployment", "Sanitation", 
+                            "Injuries", "Communicable", "NonCommunicable")
+
+#2.2 Standardize the selected columns in your dataset
+life.expectancy_filtered[columns_to_standardize] <- scale(life.expectancy_filtered[columns_to_standardize])
+
+#2.3 Check the standardized data
+summary(life.expectancy_filtered[columns_to_standardize])
+```
+
+```{r}
+#3 Run PCA
+#3.1 Replace remaining na with mean in column
+which(is.na(life.expectancy_filtered[columns_to_standardize]), arr.ind = TRUE)
+life.expectancy_filtered[columns_to_standardize] <- lapply(life.expectancy_filtered[columns_to_standardize], function(x) {
+  x[is.na(x)] <- mean(x, na.rm = TRUE)  # Replace NAs with the mean of the column
+  return(x)
+})
+
+# Step 1: Perform PCA on the standardized dataset
+pca_result <- prcomp(life.expectancy_filtered[columns_to_standardize], center = TRUE, scale. = TRUE)
+summary(pca_result)
+
+eig.val<-get_eigenvalue(pca_result)
+eig.val
+#first 3 dimensions are > 1, so will use those 
+
+# Step 2: Get the first 3 principal components
+# The first 3 components will be stored in pca_result$x (the scores matrix)
+pca_scores <- pca_result$x[, 1:3]  # Extract the first 3 principal components
+
+# Step 3: Check the amount of variance explained by the first 3 components
+summary(pca_result)  # This will show you how much variance each PC explains
+
+# If you want to see the cumulative variance explained by the first 3 PCs:
+cumulative_variance <- cumsum(summary(pca_result)$importance[2, 1:3])
+print(cumulative_variance)  # This will show the cumulative variance explained by the first 3 PCs
+```
+
+```{r}
+#4 visualize pca results
+
+# Create a 2D scatter plot of the first two principal components
+pca_scores <- pca_result$x  # PCA scores (the transformed data)
+plot(pca_scores[, 1], pca_scores[, 2], 
+     xlab = "Principal Component 1", ylab = "Principal Component 2",
+     main = "PCA: Countries in PC1 and PC2 Space", 
+     pch = 19, col = "blue")  # pch = 19 gives filled circles
+
+# Install plotly if not already installed
+# install.packages("plotly")
+
+library(plotly)
+
+# Create a 3D scatter plot of the first three principal components
+pca_scores_3d <- pca_result$x[, 1:3]  # Extract the first three principal components
+
+plot_ly(x = pca_scores_3d[, 1], y = pca_scores_3d[, 2], z = pca_scores_3d[, 3], 
+        type = "scatter3d", mode = "markers", 
+        marker = list(size = 5, color = "blue")) %>%
+  layout(title = "3D PCA Plot", 
+         scene = list(xaxis = list(title = "PC1"), 
+                      yaxis = list(title = "PC2"), 
+                      zaxis = list(title = "PC3")))
+
+```
+
+```{r}
+#5  Perform K-means clustering with 3 clusters based on the first 3 principal components
+set.seed(42)  # Set seed for reproducibility
+kmeans_result <- kmeans(pca_scores, centers = 3, nstart = 25)
+
+# Add the cluster assignments to the original dataset
+life.expectancy_filtered$Cluster <- kmeans_result$cluster
+
+# Check the average life expectancy in each cluster
+cluster_life_expectancy <- tapply(life.expectancy_filtered$Life.Expectancy.World.Bank, life.expectancy_filtered$Cluster, mean)
+print(cluster_life_expectancy)
+
+#cluster 1, lowest 
+#cluster 2, highest
+#cluster 3, middle
+
+# Manually assign labels based on the average life expectancy (based on cluster_life_expectancy output)
+life.expectancy_filtered$Life.Expectancy.Category <- ifelse(life.expectancy_filtered$Cluster == 1, "Low",
+                                                             ifelse(life.expectancy_filtered$Cluster == 2, "Medium", "High"))
+
+# 2D scatter plot of the first two principal components (PC1 vs PC2)
+plot(pca_scores[, 1], pca_scores[, 2], col = life.expectancy_filtered$Cluster, pch = 19, 
+     xlab = "Principal Component 1", ylab = "Principal Component 2", 
+     main = "PCA Clusters (Low, Medium, High Life Expectancy)", 
+     xlim = c(min(pca_scores[, 1]), max(pca_scores[, 1])), 
+     ylim = c(min(pca_scores[, 2]), max(pca_scores[, 2])))
+
+```
+
+```{r}
+#7. Examine the Influential Variables in Each Cluster
+
+# Calculate the mean (or median) of each original variable for each cluster
+library(dplyr)
+
+# List of variables to analyze (same ones you used for PCA)
+variables_to_check <- c("Prevelance.of.Undernourishment", "CO2", "Health.Expenditure..", "Unemployment", "Sanitation", 
+                        "Injuries", "Communicable", "NonCommunicable")
+
+# Group by cluster and calculate the mean for each variable in each cluster
+cluster_means <- life.expectancy_filtered %>%
+  group_by(Cluster) %>%
+  summarise(across(all_of(variables_to_check), mean, na.rm = TRUE))
+
+# Print the mean values for each cluster
+print(cluster_means)
+
+# For each variable, create a boxplot showing how it differs across clusters
+library(ggplot2)
+
+# Create a boxplot for each variable
+# Loop through each variable and create a boxplot
+for (var in variables_to_check) {
+  # Create boxplot
+  plot <- ggplot(life.expectancy_filtered, aes(x = as.factor(Cluster), y = .data[[var]])) + 
+    geom_boxplot() + 
+    labs(title = paste("Distribution of", var, "Across Clusters"),
+         x = "Cluster", y = var) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  # Print the plot
+  print(plot)
+}
+
+```
+
+8.) Interpret The Results
+Cluster 1 (Lowest Life Expectancy)
+Prevalence of Undernourishment: 0.36 (relatively high, indicating that in Cluster 1, countries have higher levels of undernourishment).
+CO2 Emissions: -0.15 (slightly lower than average; countries in Cluster 1 tend to have lower CO2 emissions).
+Health Expenditure: -0.53 (quite low; countries in Cluster 1 spend less on healthcare relative to GDP).
+Unemployment: -0.25 (moderate, countries have relatively moderate unemployment rates).
+Sanitation: -0.37 (lower access to sanitation compared to other clusters).
+Injuries, Communicable, Non-communicable Diseases: These values are close to zero or slightly negative, indicating that these factors are less influential in the countries of Cluster 1.
+Interpretation: Cluster 1 countries tend to have lower healthcare spending, higher levels of undernourishment, and less access to sanitation. These factors align with countries that typically face significant economic and healthcare challenges, leading to low life expectancy.
+
+Cluster 2 (Highest Life Expectancy)
+Prevalence of Undernourishment: -0.58 (lower; these countries have lower levels of undernourishment).
+CO2 Emissions: 0.06 (slightly higher than average; these countries tend to have higher CO2 emissions).
+Health Expenditure: 0.89 (very high; countries in Cluster 2 spend significantly more on healthcare relative to GDP).
+Unemployment: 0.42 (moderate; unemployment is relatively moderate).
+Sanitation: 0.63 (good access to sanitation facilities, which is a key indicator of public health).
+Injuries, Communicable, Non-communicable Diseases: These are all negative or near zero, indicating that these factors do not significantly affect the countries in this cluster.
+Interpretation: Cluster 2 countries tend to have high healthcare expenditure, low levels of undernourishment, and better access to sanitation, which are all associated with higher life expectancy. These are typically wealthier countries with strong healthcare systems and better living standards.
+
+Cluster 3 (Middle Life Expectancy)
+Prevalence of Undernourishment: -0.0047 (near average, indicating moderate levels of undernourishment).
+CO2 Emissions: 5.93 (very high; countries in Cluster 3 have high levels of CO2 emissions).
+Health Expenditure: -0.87 (low; these countries spend relatively little on healthcare compared to GDP).
+Unemployment: -0.47 (relatively high unemployment in these countries).
+Sanitation: -0.88 (poor access to sanitation).
+Injuries, Communicable, Non-communicable Diseases: These values are extremely high, suggesting that the countries in Cluster 3 are dealing with significant healthcare issues, particularly injuries and communicable diseases.
+Interpretation: Cluster 3 countries have higher CO2 emissions, poor access to sanitation, and low healthcare expenditure, and they are also heavily impacted by injuries and communicable diseases. These characteristics indicate that while these countries have relatively middle-range life expectancy, they still face significant public health challenges that prevent them from achieving high life expectancy, even though some wealthier nations may fall into this category.
+
+Summary of Key Differences Between Clusters:
+Healthcare Spending:
+Cluster 1: Low healthcare expenditure (low life expectancy).
+Cluster 2: High healthcare expenditure (high life expectancy).
+Cluster 3: Low healthcare expenditure (middle life expectancy).
+
+Undernourishment:
+Cluster 1: High prevalence of undernourishment (low life expectancy).
+Cluster 2: Low prevalence of undernourishment (high life expectancy).
+Cluster 3: Moderate prevalence of undernourishment (middle life expectancy).
+
+Sanitation:
+Cluster 1: Poor sanitation access (low life expectancy).
+Cluster 2: Good sanitation access (high life expectancy).
+Cluster 3: Poor sanitation access (middle life expectancy).
+
+Health Challenges (Injuries, Communicable, Non-communicable Diseases):
+Cluster 1: Relatively low health challenges in terms of injuries and diseases.
+Cluster 2: Relatively low health challenges.
+Cluster 3: High health challenges, especially injuries and communicable diseases.
+
+CO2 Emissions:
+Cluster 1: Lower CO2 emissions.
+Cluster 2: Higher CO2 emissions.
+Cluster 3: Very high CO2 emissions.
+
+Conclusion:
+Cluster 1 countries, with low life expectancy, face greater challenges in terms of nutrition, healthcare, and sanitation.
+Cluster 2 countries, with high life expectancy, have better healthcare access, better sanitation, and lower levels of undernourishment.
+Cluster 3 countries, with middle life expectancy, struggle with health issues, low healthcare spending, and poor sanitation, despite their high CO2 emissions
+
+Since the middle and high life expectancy countries actually have higher co2 emissions, maybe co2 emissions don't matter as much. 
+Opposes literacy review because countries spending more on $ actually have higher life expectancy
+
+Prevalence, sanitation, intuitive 
+
+Interesting how only middle class had health problems. Lower life expectancy class didn't have health problems much, which was surprising
