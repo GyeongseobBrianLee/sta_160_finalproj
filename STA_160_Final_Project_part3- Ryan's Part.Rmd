@@ -1,0 +1,181 @@
+---
+title: "STA 160 Final Project Summary Statistics"
+author: "Ryan Cosgrove"
+date: "10/22/2024"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_knit$set(root.dir = "C:/LahmanDatabase")
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+life.expectancy = read_csv("life expectancy.csv")
+life.expectancy
+```
+
+```{r}
+# Create named variables for each column's NA count
+na_Country_Name <- sum(is.na(life.expectancy$Country.Name))
+na_Country_Code <- sum(is.na(life.expectancy$Country.Code))
+na_Region <- sum(is.na(life.expectancy$Region))
+na_IncomeGroup <- sum(is.na(life.expectancy$IncomeGroup))
+na_Year <- sum(is.na(life.expectancy$Year))
+na_Life_Expectancy_WB <- sum(is.na(life.expectancy$Life.Expectancy.World.Bank))
+na_Prevalence_of_Undernourishment <- sum(is.na(life.expectancy$Prevelance.of.Undernourishment))
+na_CO2 <- sum(is.na(life.expectancy$CO2))
+na_Health_Expenditure <- sum(is.na(life.expectancy$Health.Expenditure.perc))
+na_Education_Expenditure <- sum(is.na(life.expectancy$Education.Expenditure.perc))
+na_Unemployment <- sum(is.na(life.expectancy$Unemployment))
+na_Corruption <- sum(is.na(life.expectancy$Corruption))
+na_Sanitation <- sum(is.na(life.expectancy$Sanitation))
+na_Injuries <- sum(is.na(life.expectancy$Injuries))
+na_Communicable <- sum(is.na(life.expectancy$Communicable))
+na_NonCommunicable <- sum(is.na(life.expectancy$NonCommunicable))
+
+# Display the variable names and NA counts
+cat("Country.Name NA count:", na_Country_Name, "\n")
+cat("Country.Code NA count:", na_Country_Code, "\n")
+cat("Region NA count:", na_Region, "\n")
+cat("IncomeGroup NA count:", na_IncomeGroup, "\n")
+cat("Year NA count:", na_Year, "\n")
+cat("Life.Expectancy.World.Bank NA count:", na_Life_Expectancy_WB, "\n")
+cat("Prevalence.of.Undernourishment NA count:", na_Prevalence_of_Undernourishment, "\n")
+cat("CO2 NA count:", na_CO2, "\n")
+cat("Health.Expenditure NA count:", na_Health_Expenditure, "\n")
+cat("Education.Expenditure NA count:", na_Education_Expenditure, "\n")
+cat("Unemployment NA count:", na_Unemployment, "\n")
+cat("Corruption NA count:", na_Corruption, "\n")
+cat("Sanitation NA count:", na_Sanitation, "\n")
+cat("Injuries NA count:", na_Injuries, "\n")
+cat("Communicable NA count:", na_Communicable, "\n")
+cat("NonCommunicable NA count:", na_NonCommunicable, "\n")
+```
+
+```{r}
+LE_na_rows <- life.expectancy[is.na(life.expectancy$Life.Expectancy.World.Bank), ]
+
+# Display the filtered rows
+LE_na_rows
+```
+
+```{r}
+# List of countries to remove
+countries_to_remove <- c("Andorra", "American Samoa", "Dominica", "Monaco", 
+                         "Marshall Islands", "Northern Mariana Islands", 
+                         "Nauru", "Palau", "San Marino", "Tuvalu")
+
+# Filter out the specified countries
+life.expectancy_filtered <- life.expectancy[!life.expectancy$Country.Name %in% countries_to_remove, ]
+
+# Display the filtered dataset
+life.expectancy_filtered
+```
+
+
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+
+
+# Subset the dataset to include only numeric variables
+numeric_vars <- life.expectancy[, sapply(life.expectancy, is.numeric)]
+
+#calculate correlation
+cor_life_exp <- cor(x = numeric_vars$Life.Expectancy.World.Bank, y = numeric_vars[, 3:12], use = "complete.obs")
+
+cor_life_exp
+
+# to show label (X6) in the plot
+rownames(cor_life_exp)<-'Life Expectancy'
+
+# plot correlation matrix
+corrplot(cor_life_exp
+         ,addgrid.col = T
+         ,type = 'upper'
+         ,addCoef.col = T
+         ,number.cex = .7
+         ,diag = T
+         ,tl.cex = .9,
+         ,tl.pos='tl'
+         ,cl.length=5
+         ,tl.srt=40
+         )
+```
+
+```{r}
+# Initialize a model with all predictors
+numeric_vars = na.omit(numeric_vars)
+model <- lm(Life.Expectancy.World.Bank ~ ., data = numeric_vars)
+
+summary(model)
+#summary(backward_model)$coefficients[,4] 
+```
+
+```{r}
+# Backward stepwise regression
+backward_model <- step(model, direction = "backward", trace = 0, na.omit=TRUE)
+backward_model[1]
+```
+
+
+
+```{r}
+life.expectancy_filtered = life.expectancy %>%
+  mutate(across(c(Life.Expectancy.World.Bank, Prevelance.of.Undernourishment, CO2, Health.Expenditure.perc, Education.Expenditure.perc, Unemployment, Corruption, Sanitation), ~replace_na(., median(., na.rm=TRUE))))
+
+life.expectancy_filtered
+```
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+
+
+# Subset the dataset to include only numeric variables
+numeric_vars <- life.expectancy_filtered[, sapply(life.expectancy_filtered, is.numeric)]
+
+#calculate correlation
+cor_life_exp <- cor(x = numeric_vars$Life.Expectancy.World.Bank, y = numeric_vars[, 3:12], use = "complete.obs")
+
+cor_life_exp
+
+# to show label (X6) in the plot
+rownames(cor_life_exp)<-'Life Expectancy'
+
+# plot correlation matrix
+corrplot(cor_life_exp
+         ,addgrid.col = T
+         ,type = 'upper'
+         ,addCoef.col = T
+         ,number.cex = .7
+         ,diag = T
+         ,tl.cex = .9,
+         ,tl.pos='tl'
+         ,cl.length=5
+         ,tl.srt=40
+         )
+```
+
+
+```{r}
+# Initialize a model with all predictors
+
+model <- lm(Life.Expectancy.World.Bank ~ ., data = numeric_vars)
+
+summary(model)
+#summary(backward_model)$coefficients[,4] 
+```
+
+```{r}
+# Backward stepwise regression
+backward_model <- step(model, direction = "backward", trace = 0, na.omit=TRUE)
+backward_model[1]
+```
