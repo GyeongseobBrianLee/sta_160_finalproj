@@ -182,3 +182,124 @@ ggplot(life.expectancy_filtered, aes(x = Region, y = Health.Expenditure.., fill 
   theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
   labs(title = "Distribution of Health Expenditure by Region", x = "Region", y = "Health Expenditure")
 ```
+
+Ravi
+Step 1: Analyze data grouped by year and region 
+```{r}
+#Necessary Packages First
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
+# Group by Year and Region, then summarize for all years
+# Took out education expenditure and corruption due to too many na values for them 
+life.expectancy_all_years <- life.expectancy_filtered %>%
+  group_by(Year, Region) %>%
+  summarise(
+    Life_Expectancy = mean(Life.Expectancy.World.Bank, na.rm = TRUE),
+    Avg_Prevalence_of_Undernourishment = mean(Prevelance.of.Undernourishment, na.rm = TRUE),
+    Avg_CO2 = mean(CO2, na.rm = TRUE),
+    Avg_Health_Expenditure = mean(Health.Expenditure.., na.rm = TRUE),
+    Avg_Unemployment = mean(Unemployment, na.rm = TRUE),
+    Avg_Sanitation = mean(Sanitation, na.rm = TRUE),
+    Avg_Injuries = mean(Injuries, na.rm = TRUE),
+    Avg_Communicable = mean(Communicable, na.rm = TRUE),
+    Avg_NonCommunicable = mean(NonCommunicable, na.rm = TRUE
+    )
+  ) %>%
+  ungroup()
+
+# View the resulting dataset
+life.expectancy_all_years
+```
+
+Step 2:
+```{r}
+# Remove rows with any missing values in the combined dataset
+life.expectancy_all_years <- na.omit(life.expectancy_all_years)
+
+# View the cleaned dataset
+life.expectancy_all_years
+```
+
+Step 2: Assign explanatory variable to each year 
+```{r}
+# Define the base names of explanatory variables
+specific_variables <- c("Avg_Communicable", 
+               "Avg_Prevelance_of_Undernourishment", 
+               "Avg_CO2", 
+               "Avg_Health_Expenditure", 
+               "Avg_Injuries", 
+               "Avg_Unemployment", 
+               "Avg_NonCommunicable",
+               "Avg_Sanitation")
+
+# Define the range of years
+years <- 2001:2018
+
+# Generate explanatory variable names for all years
+explanatory_vars <- lapply(years, function(years) {
+  paste0(specific_variables, "_", years)
+})
+
+# Assign names to our list
+names(explanatory_vars) <- paste0("explanatory_vars_", years)
+
+# View the result
+explanatory_vars
+```
+
+Step 3: Scale Our Data 
+```{r}
+#Explanatory Variable Names
+explanatory_vars <- c("Prevelance.of.Undernourishment", 
+                      "CO2", 
+                      "Health.Expenditure..", 
+                      "Unemployment", 
+                      "Injuries", 
+                      "Communicable", 
+                      "NonCommunicable",
+                      "Sanitation")
+
+#Year Range
+years <- 2001:2018
+
+#Scale Variables
+scaled_data_list <- lapply(years, function(year) {
+  #Filter data for years
+  year_data <- life.expectancy_filtered %>%
+    filter(Year == year) %>%
+    select(all_of(explanatory_vars))
+  # Scale the data
+  scaled_data <- scale(year_data)
+  # Return the scaled data
+  return(scaled_data)
+})
+# Assign names to our list
+names(scaled_data_list) <- paste0("scaled_data_", years)
+```
+
+Step 4: Create Graph
+```{r}
+#Combine The Data For All Years
+life.expectancy_combined_summary <- life.expectancy_combined %>%
+  group_by(TimeFrame, Region) %>%
+  summarise(Average_Life_Expectancy = mean(Life_Expectancy, na.rm = TRUE)) %>%
+  ungroup()
+
+# Plot the summarized data
+ggplot(life.expectancy_combined_summary, aes(x = TimeFrame, y = Average_Life_Expectancy, color = Region)) +
+  geom_point(size = 3) +  
+  geom_line(aes(group = Region), size = 1) +
+  labs(
+    title = "AVG Life Expectancy Across Years by Region",
+    x = "Years",
+    y = "Average Life Expectancy",
+    color = "Region"
+  ) + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+
+Ryan
+
