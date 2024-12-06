@@ -302,4 +302,128 @@ ggplot(life.expectancy_combined_summary, aes(x = TimeFrame, y = Average_Life_Exp
 ```
 
 Ryan
+```{r}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
 
+
+# Subset the dataset to include only numeric variables
+numeric_vars <- life.expectancy[, sapply(life.expectancy, is.numeric)]
+
+#calculate correlation
+cor_life_exp <- cor(x = numeric_vars$Life.Expectancy.World.Bank, y = numeric_vars[, 3:12], use = "complete.obs")
+
+cor_life_exp
+
+# to show label (X6) in the plot
+rownames(cor_life_exp)<-'Life Expectancy'
+
+# plot correlation matrix
+corrplot(cor_life_exp
+         ,addgrid.col = T
+         ,type = 'upper'
+         ,addCoef.col = T
+         ,number.cex = .7
+         ,diag = T
+         ,tl.cex = .9,
+         ,tl.pos='tl'
+         ,cl.length=5
+         ,tl.srt=40
+         )
+```
+
+```{r}
+# Initialize a model with all predictors
+numeric_vars = na.omit(numeric_vars)
+model <- lm(Life.Expectancy.World.Bank ~ ., data = numeric_vars)
+
+summary(model)
+#summary(backward_model)$coefficients[,4] 
+```
+
+```{r}
+# Backward stepwise regression
+backward_model <- step(model, direction = "backward", trace = 0, na.omit=TRUE)
+backward_model[1]
+```
+
+
+
+```{r}
+life.expectancy_filtered = life.expectancy %>%
+  mutate(across(c(Life.Expectancy.World.Bank, Prevelance.of.Undernourishment, CO2, Health.Expenditure.perc, Education.Expenditure.perc, Unemployment, Corruption, Sanitation), ~replace_na(., median(., na.rm=TRUE))))
+
+life.expectancy_filtered
+```
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+
+
+# Subset the dataset to include only numeric variables
+numeric_vars <- life.expectancy_filtered[, sapply(life.expectancy_filtered, is.numeric)]
+
+#calculate correlation
+cor_life_exp <- cor(x = numeric_vars$Life.Expectancy.World.Bank, y = numeric_vars[, 3:12], use = "complete.obs")
+
+cor_life_exp
+
+# to show label (X6) in the plot
+rownames(cor_life_exp)<-'Life Expectancy'
+
+# plot correlation matrix
+corrplot(cor_life_exp
+         ,addgrid.col = T
+         ,type = 'upper'
+         ,addCoef.col = T
+         ,number.cex = .7
+         ,diag = T
+         ,tl.cex = .9,
+         ,tl.pos='tl'
+         ,cl.length=5
+         ,tl.srt=40
+         )
+```
+
+
+```{r}
+# Initialize a model with all predictors
+
+model <- lm(Life.Expectancy.World.Bank ~ ., data = numeric_vars)
+
+summary(model)
+#summary(backward_model)$coefficients[,4] 
+```
+
+```{r}
+# Backward stepwise regression
+backward_model <- step(model, direction = "backward", trace = 0, na.omit=TRUE)
+backward_model[1]
+```
+
+Brian
+```{r}
+library(randomForest)
+library(tidyr)
+df = life.expectancy_filtered
+df_sub_saharan = subset(df, Region == "Sub-Saharan Africa") # dataset that only contains region of Sub-Saharan Africa
+df_sub_saharan = df_sub_saharan %>% drop_na()
+response = "Life.Expectancy.World.Bank"
+predictor = "IncomeGroup + Prevelance.of.Undernourishment + CO2 + Health.Expenditure..+ Education.Expenditure.. + Unemployment + Sanitation + Injuries + Communicable + NonCommunicable"
+
+sum(is.na(df$Sanitation) == T) # No missing values for response variable
+sum(is.na(df_sub_saharan)) # No missing values for every columns
+
+formula = as.formula(paste(response, "~", predictor))
+model = randomForest(formula, data = df_sub_saharan, importance = T)
+model
+importance(model)
+varImpPlot(model)
+
+# %IncMSE : the increase in mean squared error, where the error of the model prediction is increased by randomly replacing the value of each predictor variable if it's more important
+
+# %IncNodePurity : measure of how much the homogeneity of groups changes when a variable is randomly permuted. This uses the Gini coefficient to calculate the decrease in purity if a variable has no information
+```
