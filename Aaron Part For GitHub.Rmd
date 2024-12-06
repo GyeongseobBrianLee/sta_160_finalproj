@@ -1,0 +1,143 @@
+---
+title: "Untitled"
+author: "Aaron Luong"
+date: "2024-12-06"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+life.expectancy <- read.csv("~/Downloads/life expectancy.csv")
+```
+
+```{r}
+# Create named variables for each column's NA count
+na_Country_Name <- sum(is.na(life.expectancy$Country.Name))
+na_Country_Code <- sum(is.na(life.expectancy$Country.Code))
+na_Region <- sum(is.na(life.expectancy$Region))
+na_IncomeGroup <- sum(is.na(life.expectancy$IncomeGroup))
+na_Year <- sum(is.na(life.expectancy$Year))
+na_Life_Expectancy_WB <- sum(is.na(life.expectancy$Life.Expectancy.World.Bank))
+na_Prevalence_of_Undernourishment <- sum(is.na(life.expectancy$Prevelance.of.Undernourishment))
+na_CO2 <- sum(is.na(life.expectancy$CO2))
+na_Health_Expenditure <- sum(is.na(life.expectancy$Health.Expenditure..))
+na_Education_Expenditure <- sum(is.na(life.expectancy$Education.Expenditure..))
+na_Unemployment <- sum(is.na(life.expectancy$Unemployment))
+na_Corruption <- sum(is.na(life.expectancy$Corruption))
+na_Sanitation <- sum(is.na(life.expectancy$Sanitation))
+na_Injuries <- sum(is.na(life.expectancy$Injuries))
+na_Communicable <- sum(is.na(life.expectancy$Communicable))
+na_NonCommunicable <- sum(is.na(life.expectancy$NonCommunicable))
+
+# Display the variable names and NA counts
+cat("Country.Name NA count:", na_Country_Name, "\n")
+cat("Country.Code NA count:", na_Country_Code, "\n")
+cat("Region NA count:", na_Region, "\n")
+cat("IncomeGroup NA count:", na_IncomeGroup, "\n")
+cat("Year NA count:", na_Year, "\n")
+cat("Life.Expectancy.World.Bank NA count:", na_Life_Expectancy_WB, "\n")
+cat("Prevalence.of.Undernourishment NA count:", na_Prevalence_of_Undernourishment, "\n")
+cat("CO2 NA count:", na_CO2, "\n")
+cat("Health.Expenditure NA count:", na_Health_Expenditure, "\n")
+cat("Education.Expenditure NA count:", na_Education_Expenditure, "\n")
+cat("Unemployment NA count:", na_Unemployment, "\n")
+cat("Corruption NA count:", na_Corruption, "\n")
+cat("Sanitation NA count:", na_Sanitation, "\n")
+cat("Injuries NA count:", na_Injuries, "\n")
+cat("Communicable NA count:", na_Communicable, "\n")
+cat("NonCommunicable NA count:", na_NonCommunicable, "\n")
+```
+
+```{r}
+LE_na_rows <- life.expectancy[is.na(life.expectancy$Life.Expectancy.World.Bank), ]
+
+# Display the filtered rows
+LE_na_rows
+```
+
+```{r}
+# List of countries to remove
+countries_to_remove <- c("Andorra", "American Samoa", "Dominica", "Monaco", 
+                         "Marshall Islands", "Northern Mariana Islands", 
+                         "Nauru", "Palau", "San Marino", "Tuvalu")
+
+# Filter out the specified countries
+life.expectancy_filtered <- life.expectancy[!life.expectancy$Country.Name %in% countries_to_remove, ]
+
+# Display the filtered dataset
+life.expectancy_filtered
+```
+
+```{r}
+# Ensure there are no missing values in the relevant columns
+life.expectancy_filtered <- na.omit(life.expectancy_filtered)
+
+# Extract relevant columns for clustering and visualization
+life_expectancy_values <- life.expectancy_filtered$Life.Expectancy.World.Bank
+health_expenditure_values <- life.expectancy_filtered$Health.Expenditure..
+
+# Apply k-means clustering with 3 groups
+set.seed(123) # For reproducibility
+kmeans_result <- kmeans(life_expectancy_values, centers = 3, nstart = 25)
+
+# Add the cluster labels to the dataset
+life.expectancy_filtered$Cluster <- kmeans_result$cluster
+
+# Visualize clusters in a scatter plot
+library(ggplot2)
+ggplot(life.expectancy_filtered, aes(x = Health.Expenditure.., y = Life.Expectancy.World.Bank, color = as.factor(Cluster))) +
+  geom_point(size = 3) +
+  labs(title = "Life Expectancy vs. Health Expenditure (Clusters)",
+       x = "Health Expenditure (% of GDP)",
+       y = "Life Expectancy (Years)",
+       color = "Cluster") +
+  theme_minimal()
+```
+```{r}
+# Load the necessary library
+library(mgcv)
+
+# Ensure no missing values in relevant variables
+gam_data <- na.omit(life.expectancy_filtered[, c("Cluster", "Life.Expectancy.World.Bank", 
+                                                 "Health.Expenditure..", 
+                                                 "Sanitation", 
+                                                 "Education.Expenditure..", 
+                                                 "Prevelance.of.Undernourishment")])
+
+# Filter data for Cluster 1
+cluster_1_data <- subset(gam_data, Cluster == 1)
+gam_model_1 <- gam(Life.Expectancy.World.Bank ~ 
+                     s(Health.Expenditure..) + 
+                     s(Sanitation) + 
+                     s(Education.Expenditure..) + 
+                     s(Prevelance.of.Undernourishment),
+                   data = cluster_1_data)
+cat("\nCluster 1 GAM Summary:\n")
+print(summary(gam_model_1))
+
+# Filter data for Cluster 2
+cluster_2_data <- subset(gam_data, Cluster == 2)
+gam_model_2 <- gam(Life.Expectancy.World.Bank ~ 
+                     s(Health.Expenditure..) + 
+                     s(Sanitation) + 
+                     s(Education.Expenditure..) + 
+                     s(Prevelance.of.Undernourishment),
+                   data = cluster_2_data)
+cat("\nCluster 2 GAM Summary:\n")
+print(summary(gam_model_2))
+
+# Filter data for Cluster 3
+cluster_3_data <- subset(gam_data, Cluster == 3)
+gam_model_3 <- gam(Life.Expectancy.World.Bank ~ 
+                     s(Health.Expenditure..) + 
+                     s(Sanitation) + 
+                     s(Education.Expenditure..) + 
+                     s(Prevelance.of.Undernourishment),
+                   data = cluster_3_data)
+cat("\nCluster 3 GAM Summary:\n")
+print(summary(gam_model_3))
+```
+
