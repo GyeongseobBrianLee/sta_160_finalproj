@@ -278,8 +278,8 @@ ggplot(life_expectancy_all_years, aes(x = Year, y = Life_Expectancy, color = Reg
     axis.text.x = element_text(angle = 45, hjust = 1),
     plot.title = element_text(hjust = 0.5)    
   ) +
-  scale_x_continuous(breaks = seq(min(life.expectancy_all_years$Year), 
-                                  max(life.expectancy_all_years$Year), by = 1))
+  scale_x_continuous(breaks = seq(min(life_expectancy_all_years$Year), 
+                                  max(life_expectancy_all_years$Year), by = 1))
 ```
 
 Ryan
