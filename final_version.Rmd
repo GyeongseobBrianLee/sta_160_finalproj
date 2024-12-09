@@ -190,8 +190,9 @@ library(tidyr)
 library(ggplot2)
 
 # Group by Year and Region, then summarize for all years
-# Took out education expenditure and corruption due to too many na values for them 
-life_expectancy_all_years <- life_expectancy_filtered %>%
+# Take mean of each variable for each year, show na if all values under variable for a year is all na
+# Took out education expenditure and corruption due to na values for every value for some years for them  
+life.expectancy_all_years <- life.expectancy_filtered %>%
   group_by(Year, Region) %>%
   summarise(
     Life_Expectancy = mean(Life.Expectancy.World.Bank, na.rm = TRUE),
@@ -202,27 +203,40 @@ life_expectancy_all_years <- life_expectancy_filtered %>%
     Avg_Sanitation = mean(Sanitation, na.rm = TRUE),
     Avg_Injuries = mean(Injuries, na.rm = TRUE),
     Avg_Communicable = mean(Communicable, na.rm = TRUE),
-    Avg_NonCommunicable = mean(NonCommunicable, na.rm = TRUE
-    )
-  ) %>%
-  ungroup()
+    Avg_NonCommunicable = mean(NonCommunicable, na.rm = TRUE)
+  , .groups = "drop")
 
 # View the resulting dataset
-life_expectancy_all_years
+life.expectancy_all_years
 ```
 
-Step 2:
+Step 2: Ensure that all variables have 0 na values now 
 ```{r}
-# Remove rows with any missing values in the combined dataset
-life_expectancy_all_years <- na.omit(life_expectancy_all_years)
+na_Prevalence_of_Undernourishment_all <- sum(is.na(life.expectancy_all_years$Avg_Prevalence_of_Undernourishment))
+na_CO2_all <- sum(is.na(life.expectancy_all_years$Avg_CO2))
+na_Health_Expenditure_all <- sum(is.na(life.expectancy_all_years$Avg_Health_Expenditure))
+na_Unemployment_all <- sum(is.na(life.expectancy_all_years$Avg_Unemployment))
+na_Sanitation_all <- sum(is.na(life.expectancy_all_years$Avg_Sanitation))
+na_Injuries_all <- sum(is.na(life.expectancy_all_years$Avg_Injuries))
+na_Communicable_all <- sum(is.na(life.expectancy_all_years$Avg_Communicable))
+na_NonCommunicable_all <- sum(is.na(life.expectancy_all_years$Avg_NonCommunicable))
 
-# View the cleaned dataset
-life_expectancy_all_years
+# Display the variable names and NA counts
+cat("Prevalence.of.Undernourishment NA count:", na_Prevalence_of_Undernourishment_all, "\n")
+cat("CO2 NA count:", na_CO2_all, "\n")
+cat("Health.Expenditure NA count:", na_Health_Expenditure_all, "\n")
+cat("Unemployment NA count:", na_Unemployment_all, "\n")
+cat("Sanitation NA count:", na_Sanitation_all, "\n")
+cat("Injuries NA count:", na_Injuries_all, "\n")
+cat("Communicable NA count:", na_Communicable_all, "\n")
+cat("NonCommunicable NA count:", na_NonCommunicable_all, "\n")
+
+#Education expendituere and corruption was > 0, so that's why we removed them for this 
 ```
 
-Step 2: Assign explanatory variable to each year 
+Step 3: Assign explanatory variable to each year 
 ```{r}
-# Define the base names of explanatory variables
+# Assign the base names of explanatory variables
 specific_variables <- c("Avg_Communicable", 
                "Avg_Prevelance_of_Undernourishment", 
                "Avg_CO2", 
@@ -232,7 +246,7 @@ specific_variables <- c("Avg_Communicable",
                "Avg_NonCommunicable",
                "Avg_Sanitation")
 
-# Define the range of years
+# Assign the range of years
 years <- 2001:2018
 
 # Generate explanatory variable names for all years
@@ -247,40 +261,10 @@ names(explanatory_vars) <- paste0("explanatory_vars_", years)
 explanatory_vars
 ```
 
-Step 3: Scale Our Data 
-```{r}
-#Explanatory Variable Names
-explanatory_vars <- c("Prevelance.of.Undernourishment", 
-                      "CO2", 
-                      "Health.Expenditure..", 
-                      "Unemployment", 
-                      "Injuries", 
-                      "Communicable", 
-                      "NonCommunicable",
-                      "Sanitation")
-
-#Year Range
-years <- 2001:2018
-
-#Scale Variables
-scaled_data_list <- lapply(years, function(year) {
-  #Filter data for years
-  year_data <- life_expectancy_filtered %>%
-    filter(Year == year) %>%
-    select(all_of(explanatory_vars))
-  # Scale the data
-  scaled_data <- scale(year_data)
-  # Return the scaled data
-  return(scaled_data)
-})
-# Assign names to our list
-names(scaled_data_list) <- paste0("scaled_data_", years)
-```
-
 Step 4: Create Graph
 ```{r}
 # Plot Life Expectancy for all regions over time
-ggplot(life_expectancy_all_years, aes(x = Year, y = Life_Expectancy, color = Region)) +
+ggplot(life.expectancy_all_years, aes(x = Year, y = Life_Expectancy, color = Region)) + 
   geom_line(size = 1) + 
   geom_point(size = 2) +
   labs(
@@ -291,9 +275,11 @@ ggplot(life_expectancy_all_years, aes(x = Year, y = Life_Expectancy, color = Reg
   ) +
   theme_minimal() +
   theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate x-axis labels for readability
-    plot.title = element_text(hjust = 0.5)             # Center the title
-  )
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(hjust = 0.5)    
+  ) +
+  scale_x_continuous(breaks = seq(min(life.expectancy_all_years$Year), 
+                                  max(life.expectancy_all_years$Year), by = 1))
 ```
 
 Ryan
