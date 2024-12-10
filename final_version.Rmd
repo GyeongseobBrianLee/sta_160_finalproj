@@ -268,7 +268,7 @@ ggplot(life_expectancy_all_years, aes(x = Year, y = Life_Expectancy, color = Reg
   geom_line(size = 1) + 
   geom_point(size = 2) +
   labs(
-    title = "Life Expectancy Trends Across Regions Over Time",
+    title = "Average Life Expectancy Across Regions Over Time",
     x = "Year",
     y = "Life Expectancy",
     color = "Region"
