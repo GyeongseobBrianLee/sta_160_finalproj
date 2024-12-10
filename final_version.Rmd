@@ -247,7 +247,7 @@ specific_variables <- c("Avg_Communicable",
                "Avg_Sanitation")
 
 # Assign the range of years
-years <- 2001:2018
+years <- 2001:2019
 
 # Generate explanatory variable names for all years
 explanatory_vars <- lapply(years, function(years) {
